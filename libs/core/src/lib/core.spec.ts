@@ -229,7 +229,7 @@ describe('Evaluator - Unit Tests', () => {
     };
 
     expect(() => evaluate(script)).toThrow(
-      `Function not found: unknownFunction`
+      `Function not found in registry: unknownFunction`
     );
   });
 });
@@ -527,7 +527,7 @@ describe('Evaluator - Expression Type', () => {
     });
 
     expect(() => evaluate(script)).toThrow(
-      `Function not found: unknownFunction`
+      `Function not found in registry: unknownFunction`
     );
   });
 
@@ -601,4 +601,44 @@ describe('Evaluator - Context Checking', () => {
 
     consoleWarnSpy.mockRestore();
   });
+});
+
+
+describe('Evaluator - Register Expression', () => {
+  it('should evaluate registered function "add"', () => {
+  const script = createConditionScript({
+    if: {
+      operator: '==',
+      left: {
+        expression: {
+          fn: 'add',
+          args: [{ value: 5 }, { value: 10 }],
+        },
+      },
+      right: { value: 15 },
+    },
+    then: 'Match',
+  });
+
+  const result = evaluate(script);
+  expect(result).toBe('Match');
+});
+
+it('should throw error for unregistered function', () => {
+  const script = createConditionScript({
+    if: {
+      operator: '==',
+      left: {
+        expression: {
+          fn: 'unknownFn',
+          args: [],
+        },
+      },
+      right: { value: true },
+    },
+    then: 'Should not reach here',
+  });
+
+  expect(() => evaluate(script)).toThrow('Function not found in registry: unknownFn');
+});
 });

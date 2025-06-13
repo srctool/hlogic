@@ -6,6 +6,23 @@ import {
   HScriptNode,
   HValue,
 } from '@hlogic/types';
+import { getRegisteredFunction, registerFunction, unregisterFunction } from './function-registry.js';
+import { afterEach, beforeEach } from 'node:test';
+
+const add = (a: number, b: number) => a + b;
+const multiply = (a: number, b: number) => a * b;
+
+beforeEach(() => {
+  // Daftarkan fungsi sebelum test
+  registerFunction('add', add);
+  registerFunction('multiply', multiply);
+});
+
+afterEach(() => {
+  // Hapus fungsi setelah test
+  unregisterFunction('add');
+  unregisterFunction('multiply');
+});
 
 export function evaluate(script: HScriptNode): unknown {
   if (!script.context) {
@@ -93,16 +110,23 @@ function evaluateConditionPrimitive(cond: HCondition, context: any): boolean {
   }
 }
 
-function evaluateExpression(expr: HExpressionNode<any>, context: any): unknown {
+const allowGlobalFunctions = process.env.NODE_ENV !== 'production'; // contoh aktifkan
+
+function evaluateExpression(expr: HExpressionNode<unknown>, context: any): unknown {
   const { fn, args = [] } = expr;
 
-  // Simulasi fungsi global
-  if (typeof (globalThis as any)[fn] === 'function') {
-    const resolvedArgs = args.map((arg) => resolveValue(arg, context));
-    return (globalThis as any)[fn](...resolvedArgs);
+  let func = getRegisteredFunction(fn);
+
+  if (!func && allowGlobalFunctions && typeof (globalThis as any)[fn] === 'function') {
+    func = (globalThis as any)[fn];
   }
 
-  throw new Error(`Function not found: ${fn}`);
+  if (!func) {
+    throw new Error(`Function not found in registry: ${fn}`);
+  }
+
+  const resolvedArgs = args.map((arg) => resolveValue(arg, context));
+  return func(...resolvedArgs);
 }
 
 function isHCondition(value: any): value is HCondition {
@@ -117,7 +141,7 @@ function resolve(value: HConditionValue, context: any): any {
   return resolveValue(value, context);
 }
 
-function resolveValue(value: HValue, context: any): any {
+function resolveValue(value: unknown, context: any): any {
   // Jika bukan object, langsung kembalikan (primitif)
   if (!isObject(value)) {
     return value;
