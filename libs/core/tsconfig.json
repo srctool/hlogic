@@ -4,6 +4,15 @@
   "include": [],
   "references": [
     {
+      "path": "../parser"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../samples/input"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

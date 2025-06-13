@@ -32,7 +32,9 @@
   },
   "workspaces": [
     "libs/*",
-    "libs/plugins/*"
+    "libs/plugins/*",
+    "sample",
+    "libs/samples/*"
   ],
   "nx": {
     "includedScripts": [],

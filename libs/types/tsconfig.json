@@ -4,9 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../samples/input"
-    },
-    {
       "path": "./tsconfig.lib.json"
     },
     {

@@ -22,7 +22,10 @@
       "path": "./libs/plugins/crawler"
     },
     {
-      "path": "./libs/plugins/crawler"
+      "path": "./libs/types"
+    },
+    {
+      "path": "./libs/samples/input"
     }
   ]
 }
