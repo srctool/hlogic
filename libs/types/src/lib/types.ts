@@ -6,6 +6,8 @@ export interface HScriptNode {
   type: 'condition' | 'expression';
   context?: unknown;
   version?: string;
+
+  // wrapper
   condition?: HConditionNode;
   expression?: HExpressionNode<unknown>;
 }

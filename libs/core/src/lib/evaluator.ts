@@ -6,23 +6,8 @@ import {
   HScriptNode,
   HValue,
 } from '@hlogic/types';
-import { getRegisteredFunction, registerFunction, unregisterFunction } from './function-registry.js';
-import { afterEach, beforeEach } from 'node:test';
+import { getRegisteredFunction } from './function-registry.js';
 
-const add = (a: number, b: number) => a + b;
-const multiply = (a: number, b: number) => a * b;
-
-beforeEach(() => {
-  // Daftarkan fungsi sebelum test
-  registerFunction('add', add);
-  registerFunction('multiply', multiply);
-});
-
-afterEach(() => {
-  // Hapus fungsi setelah test
-  unregisterFunction('add');
-  unregisterFunction('multiply');
-});
 
 export function evaluate(script: HScriptNode): unknown {
   if (!script.context) {

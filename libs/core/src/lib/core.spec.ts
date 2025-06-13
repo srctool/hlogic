@@ -2,6 +2,7 @@ import { simpleBasicConditionalInput } from '@hlogic/sample-input';
 import { evaluate } from './evaluator.js';
 import { HScriptNode, HConditionNode } from '@hlogic/types';
 import { parse } from '@hlogic/parser';
+import { registerFunction, unregisterFunction } from './function-registry.js';
 
 const createContext = (data: any): any => data;
 
@@ -603,42 +604,87 @@ describe('Evaluator - Context Checking', () => {
   });
 });
 
-
 describe('Evaluator - Register Expression', () => {
+  const add = (a: number, b: number) => a + b;
+  const multiply = (a: number, b: number) => a * b;
+  const getDummyJson = (id: string) => {
+    fetch('https://dummyjson.com/users/1')
+      .then((res) => res.json());
+
+      return undefined;
+  };
+
+  beforeEach(() => {
+    // Daftarkan fungsi sebelum test
+    registerFunction('add', add);
+    registerFunction('multiply', multiply);
+    registerFunction('getDummyJson', getDummyJson);
+  });
+
+  afterEach(() => {
+    // Hapus fungsi setelah test
+    unregisterFunction('add');
+    unregisterFunction('multiply');
+    unregisterFunction('getDummyJson');
+  });
+
   it('should evaluate registered function "add"', () => {
-  const script = createConditionScript({
-    if: {
-      operator: '==',
-      left: {
-        expression: {
-          fn: 'add',
-          args: [{ value: 5 }, { value: 10 }],
+    const script = createConditionScript({
+      if: {
+        operator: '==',
+        left: {
+          expression: {
+            fn: 'add',
+            args: [{ value: 5 }, { value: 10 }],
+          },
         },
+        right: { value: 15 },
       },
-      right: { value: 15 },
-    },
-    then: 'Match',
+      then: 'Match',
+    });
+
+    const result = evaluate(script);
+    expect(result).toBe('Match');
   });
 
-  const result = evaluate(script);
-  expect(result).toBe('Match');
-});
-
-it('should throw error for unregistered function', () => {
-  const script = createConditionScript({
-    if: {
-      operator: '==',
-      left: {
-        expression: {
-          fn: 'unknownFn',
-          args: [],
+  it('should throw error for unregistered function', () => {
+    const script = createConditionScript({
+      if: {
+        operator: '==',
+        left: {
+          expression: {
+            fn: 'unknownFn',
+            args: [],
+          },
         },
+        right: { value: true },
       },
-      right: { value: true },
-    },
-    then: 'Should not reach here',
+      then: 'Should not reach here',
+    });
+
+    expect(() => evaluate(script)).toThrow(
+      'Function not found in registry: unknownFn'
+    );
   });
 
-  expect(() => evaluate(script)).toThrow('Function not found in registry: unknownFn');
-});
+    it('should call api', () => {
+    const script = createConditionScript({
+      if: {
+        operator: '==',
+        left: {
+          expression: {
+            fn: 'getDummyJson',
+            args: [{val: 1}],
+          },
+        },
+        right: { value: true },
+      },
+      then: '1',
+    });
+
+    // evaluate(script);
+
+
+    expect(evaluate(script)).toBeUndefined();
+  });
 });
