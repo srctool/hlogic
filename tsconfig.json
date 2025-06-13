@@ -2,5 +2,27 @@
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
   "files": [],
-  "references": []
+  "references": [
+    {
+      "path": "./libs/core"
+    },
+    {
+      "path": "./libs/parser"
+    },
+    {
+      "path": "./libs/validator"
+    },
+    {
+      "path": "./libs/cli"
+    },
+    {
+      "path": "./libs/plugins/standard"
+    },
+    {
+      "path": "./libs/plugins/crawler"
+    },
+    {
+      "path": "./libs/plugins/crawler"
+    }
+  ]
 }

@@ -4,3 +4,5 @@
 
 # hLogic
 An open declarative logic language for structured, readable by human, executable by machines and extensible with custom functions, evaluators and adapter, for anyone who want to make JSON think
+
+The `h` in hLogic is yours to define, `human`, `hybrid`, `headless`. Just like the logic itself: flexible, declarative, and adaptable
