@@ -9,7 +9,7 @@ import {
 
 export function evaluate(script: HScriptNode): unknown {
   if (!script.context) {
-    throw new Error('Missing execution context');
+    // throw new Error('Missing execution context');
   }
 
   const context = script.context;
@@ -53,12 +53,9 @@ function evaluateCondition(condition: HConditionNode, context: any): unknown {
   return undefined;
 }
 
-function evaluateConditionPrimitive(
-  cond: HCondition,
-  context: any
-): boolean {
+function evaluateConditionPrimitive(cond: HCondition, context: any): boolean {
   if ('conditions' in cond) {
-    const results = cond.conditions.map(c =>
+    const results = cond.conditions.map((c) =>
       evaluateConditionPrimitive(c, context)
     );
     return cond.operator === 'and'
@@ -75,14 +72,22 @@ function evaluateConditionPrimitive(
   const rightValue = resolve(cond.right!, context);
 
   switch (cond.operator) {
-    case '==': return leftValue == rightValue;
-    case '!=': return leftValue != rightValue;
-    case '===': return leftValue === rightValue;
-    case '!==': return leftValue !== rightValue;
-    case '>': return leftValue > rightValue;
-    case '<': return leftValue < rightValue;
-    case '>=': return leftValue >= rightValue;
-    case '<=': return leftValue <= rightValue;
+    case '==':
+      return leftValue == rightValue;
+    case '!=':
+      return leftValue != rightValue;
+    case '===':
+      return leftValue === rightValue;
+    case '!==':
+      return leftValue !== rightValue;
+    case '>':
+      return leftValue > rightValue;
+    case '<':
+      return leftValue < rightValue;
+    case '>=':
+      return leftValue >= rightValue;
+    case '<=':
+      return leftValue <= rightValue;
     default:
       throw new Error(`Unsupported operator: ${cond.operator}`);
   }
@@ -104,10 +109,6 @@ function isHCondition(value: any): value is HCondition {
   return typeof value === 'object' && 'operator' in value;
 }
 
-function isObject(value: any): value is Record<string, any> {
-  return typeof value === 'object' && value !== null;
-}
-
 function resolve(value: HConditionValue, context: any): any {
   if (isHCondition(value)) {
     return evaluateConditionPrimitive(value, context);
@@ -117,19 +118,43 @@ function resolve(value: HConditionValue, context: any): any {
 }
 
 function resolveValue(value: HValue, context: any): any {
+  // Jika bukan object, langsung kembalikan (primitif)
   if (!isObject(value)) {
-    // Jika primitif (string/number/boolean), langsung kembalikan
     return value;
   }
 
+  // Cek apakah ini referensi variabel
   if ('var' in value) {
-    return getIn(context, value.var as string);
+    const varPath = value.var;
+
+    // Validasi tipe path
+    if (typeof varPath !== 'string') {
+      throw new Error(
+        `Invalid variable reference: expected string, got ${typeof varPath}`
+      );
+    }
+
+    // Validasi context tersedia
+    if (!context) {
+      throw new Error(`Context is required to resolve variable: ${varPath}`);
+    }
+
+    // Akses dari context
+    const resolved = getIn(context, varPath);
+
+    if (resolved === undefined) {
+      console.warn(`Variable not found in context: ${varPath}`);
+    }
+
+    return resolved;
   }
 
+  // Cek apakah ini literal
   if ('value' in value) {
     return value.value;
   }
 
+  // Cek apakah ini ekspresi bersarang
   if ('expression' in value) {
     return evaluateExpression(value.expression, context);
   }
@@ -140,6 +165,14 @@ function resolveValue(value: HValue, context: any): any {
 
 function getIn(obj: any, path: string): any {
   return path.split('.').reduce((acc, part) => acc?.[part], obj);
+}
+
+function isObject(value: any): value is Record<string, any> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isVarReference(value: HValue): value is { var: string } {
+  return isObject(value) && 'var' in value && typeof value.var === 'string';
 }
 
 function evaluateAction(action: any, context: any): any {

@@ -1,15 +1,12 @@
 import { simpleBasicConditionalInput } from '@hlogic/sample-input';
 import { evaluate } from './evaluator.js';
-import {
-  HScriptNode,
-  HConditionNode,
-} from '@hlogic/types';
+import { HScriptNode, HConditionNode } from '@hlogic/types';
 import { parse } from '@hlogic/parser';
 
 const createContext = (data: any): any => data;
 
 // --- Helper untuk membuat script condition ---
-const createScript = (
+const createConditionScript = (
   condition: HConditionNode,
   context?: any
 ): HScriptNode => ({
@@ -19,11 +16,20 @@ const createScript = (
   context,
 });
 
-describe('Evaluator - Unit Tests', () => {
+const createExpressionScript = (
+  expression: any,
+  context?: any
+): HScriptNode => ({
+  extension: 'hscript',
+  type: 'expression',
+  expression,
+  context,
+});
 
+describe('Evaluator - Unit Tests', () => {
   // --- Test Dasar Evaluasi Kondisi ---
   it('should return "then" when condition is true', () => {
-    // const script = createScript(
+    // const script = createConditionScript(
     //   {
     //     if: {
     //       operator: '==',
@@ -42,7 +48,7 @@ describe('Evaluator - Unit Tests', () => {
   });
 
   it('should return "else" when condition is false', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: '==',
@@ -61,7 +67,7 @@ describe('Evaluator - Unit Tests', () => {
 
   // --- Test Nested Else If ---
   it('should evaluate elseIf chain correctly', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: '==',
@@ -98,7 +104,7 @@ describe('Evaluator - Unit Tests', () => {
 
   // --- Test Resolve Value (var, value, expression) ---
   it('should resolve nested expression in condition', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: '>',
@@ -124,7 +130,7 @@ describe('Evaluator - Unit Tests', () => {
 
   // --- Test Action Wrapper (expression & logic) ---
   it('should evaluate action with wrapper expression', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: '==',
@@ -149,7 +155,7 @@ describe('Evaluator - Unit Tests', () => {
   });
 
   it('should evaluate action with wrapper logic', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: '==',
@@ -196,7 +202,7 @@ describe('Evaluator - Unit Tests', () => {
 
   // --- Error Handling ---
   it('should throw error for unsupported operator', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: 'invalid-op',
@@ -222,7 +228,9 @@ describe('Evaluator - Unit Tests', () => {
       context: {},
     };
 
-    expect(() => evaluate(script)).toThrow(`Function not found: unknownFunction`);
+    expect(() => evaluate(script)).toThrow(
+      `Function not found: unknownFunction`
+    );
   });
 });
 
@@ -232,7 +240,7 @@ describe('Evaluator - Logical Operators', () => {
   });
 
   it('should evaluate simple condition', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: '==',
@@ -249,13 +257,17 @@ describe('Evaluator - Logical Operators', () => {
   });
 
   it('should evaluate "and" condition correctly', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: 'and',
           conditions: [
             { operator: '>', left: { var: 'age' }, right: { value: 18 } },
-            { operator: '==', left: { var: 'role' }, right: { value: 'admin' } },
+            {
+              operator: '==',
+              left: { var: 'role' },
+              right: { value: 'admin' },
+            },
           ],
         },
         then: 'Access Granted',
@@ -268,7 +280,7 @@ describe('Evaluator - Logical Operators', () => {
   });
 
   it('should evaluate "or" condition correctly', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: 'or',
@@ -287,7 +299,7 @@ describe('Evaluator - Logical Operators', () => {
   });
 
   it('should evaluate "not" condition correctly', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: 'not',
@@ -307,7 +319,7 @@ describe('Evaluator - Logical Operators', () => {
   });
 
   it('should handle nested logic with "and", "or", and "not"', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: 'and',
@@ -315,8 +327,16 @@ describe('Evaluator - Logical Operators', () => {
             {
               operator: 'or',
               conditions: [
-                { operator: '==', left: { var: 'role' }, right: { value: 'admin' } },
-                { operator: '==', left: { var: 'role' }, right: { value: 'mod' } },
+                {
+                  operator: '==',
+                  left: { var: 'role' },
+                  right: { value: 'admin' },
+                },
+                {
+                  operator: '==',
+                  left: { var: 'role' },
+                  right: { value: 'mod' },
+                },
               ],
             },
             {
@@ -339,13 +359,21 @@ describe('Evaluator - Logical Operators', () => {
   });
 
   it('should return undefined when condition is false', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: 'and',
           conditions: [
-            { operator: '==', left: { var: 'role' }, right: { value: 'admin' } },
-            { operator: '==', left: { var: 'status' }, right: { value: 'active' } },
+            {
+              operator: '==',
+              left: { var: 'role' },
+              right: { value: 'admin' },
+            },
+            {
+              operator: '==',
+              left: { var: 'status' },
+              right: { value: 'active' },
+            },
           ],
         },
         then: 'Valid User',
@@ -358,7 +386,7 @@ describe('Evaluator - Logical Operators', () => {
   });
 
   it('should evaluate else branch when condition is false', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: '==',
@@ -376,7 +404,7 @@ describe('Evaluator - Logical Operators', () => {
   });
 
   it('should evaluate elseIf chain correctly', () => {
-    const script = createScript(
+    const script = createConditionScript(
       {
         if: {
           operator: '==',
@@ -409,5 +437,168 @@ describe('Evaluator - Logical Operators', () => {
 
     const result = evaluate(script);
     expect(result).toBe('B');
+  });
+});
+
+describe('Evaluator - Expression Type', () => {
+  it('should evaluate simple expression with no args', () => {
+    // Simulasikan fungsi global
+    (global as any).hello = () => 'Hello World';
+
+    const script = createExpressionScript({
+      fn: 'hello',
+      args: [],
+    });
+
+    const result = evaluate(script);
+    expect(result).toBe('Hello World');
+  });
+
+  it('should evaluate expression with literal args', () => {
+    (global as any).add = (a: number, b: number) => a + b;
+
+    const script = createExpressionScript({
+      fn: 'add',
+      args: [5, 10],
+    });
+
+    const result = evaluate(script);
+    expect(result).toBe(15);
+  });
+
+  it('should resolve variable from context as argument', () => {
+    (global as any).greet = (name: string) => `Hello ${name}`;
+
+    const script = createExpressionScript(
+      {
+        fn: 'greet',
+        args: [{ var: 'user.name' }],
+      },
+      { user: { name: 'Alice' } }
+    );
+
+    const result = evaluate(script);
+    expect(result).toBe('Hello Alice');
+  });
+
+  it('should resolve multiple variables from context', () => {
+    (global as any).sum = (a: number, b: number) => a + b;
+
+    const script = createExpressionScript(
+      {
+        fn: 'sum',
+        args: [{ var: 'a' }, { var: 'b' }],
+      },
+      { a: 20, b: 30 }
+    );
+
+    const result = evaluate(script);
+    expect(result).toBe(50);
+  });
+
+  it('should handle nested expression in args', () => {
+    (global as any).multiply = (a: number, b: number) => a * b;
+
+    const script = createExpressionScript(
+      {
+        fn: 'multiply',
+        args: [
+          { var: 'x' },
+          {
+            expression: {
+              fn: 'sum',
+              args: [{ var: 'y' }, { var: 'z' }],
+            },
+          },
+        ],
+      },
+      { x: 2, y: 3, z: 4 }
+    );
+
+    // sum(y=3, z=4) = 7 → multiply(x=2, 7) = 14
+    const result = evaluate(script);
+    expect(result).toBe(14);
+  });
+
+  it('should throw error for unknown function', () => {
+    const script = createExpressionScript({
+      fn: 'unknownFunction',
+      args: [],
+    });
+
+    expect(() => evaluate(script)).toThrow(
+      `Function not found: unknownFunction`
+    );
+  });
+
+  it('should allow optional args', () => {
+    (global as any).log = (...args: any[]) => args.join(', ');
+
+    const script = createExpressionScript(
+      {
+        fn: 'log',
+        args: [{ value: 'Hello' }, { var: 'user.name' }],
+      },
+      { user: { name: 'Bob' } }
+    );
+
+    const result = evaluate(script);
+    expect(result).toBe('Hello, Bob');
+  });
+});
+
+describe('Evaluator - Context Checking', () => {
+  it('should throw error when context is missing but variable is used', () => {
+    const script = createConditionScript({
+      if: {
+        operator: '==',
+        left: { var: 'user.role' },
+        right: { value: 'admin' },
+      },
+      then: 'Access Granted',
+    });
+
+    expect(() => evaluate(script)).toThrow(
+      'Context is required to resolve variable: user.role'
+    );
+  });
+
+  it('should throw error when var is not a string', () => {
+    const script = createConditionScript(
+      {
+        if: {
+          operator: '==',
+          left: { var: 123 },
+          right: { value: 'admin' },
+        },
+        then: 'Access Granted',
+      },
+      {}
+    );
+
+    expect(() => evaluate(script)).toThrow(`expected string, got number`);
+  });
+
+  it('should warn when variable not found in context', () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+    const script = createConditionScript(
+      {
+        if: {
+          operator: '==',
+          left: { var: 'user.role' },
+          right: { value: 'admin' },
+        },
+        then: 'Access Granted',
+      },
+      {} // context kosong
+    );
+
+    evaluate(script); // tidak error, tapi kasih warning
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'Variable not found in context: user.role'
+    );
+
+    consoleWarnSpy.mockRestore();
   });
 });

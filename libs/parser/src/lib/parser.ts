@@ -9,8 +9,6 @@ export function parse(raw: unknown): HScriptNode {
 
   const input = raw as Record<string, any>;
 
-  console.log(input);
-
     if (input.extension !== 'hscript') {
     throw new Error('Unsupported extension');
   }
