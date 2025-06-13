@@ -1,4 +1,11 @@
-import { HCondition, HConditionNode, HExpressionNode, HScriptNode, HValue } from '@hlogic/types';
+import {
+  HCondition,
+  HConditionNode,
+  HConditionValue,
+  HExpressionNode,
+  HScriptNode,
+  HValue,
+} from '@hlogic/types';
 
 export function evaluate(script: HScriptNode): unknown {
   if (!script.context) {
@@ -46,27 +53,36 @@ function evaluateCondition(condition: HConditionNode, context: any): unknown {
   return undefined;
 }
 
-function evaluateConditionPrimitive(cond: HCondition, context: any): boolean {
-  const leftValue = resolveValue(cond.left, context);
-  const rightValue = resolveValue(cond.right, context);
+function evaluateConditionPrimitive(
+  cond: HCondition,
+  context: any
+): boolean {
+  if ('conditions' in cond) {
+    const results = cond.conditions.map(c =>
+      evaluateConditionPrimitive(c, context)
+    );
+    return cond.operator === 'and'
+      ? results.every(Boolean)
+      : results.some(Boolean);
+  }
+
+  if ('condition' in cond && cond.operator === 'not') {
+    const result = resolve(cond.condition, context);
+    return !result;
+  }
+
+  const leftValue = resolve(cond.left, context);
+  const rightValue = resolve(cond.right!, context);
 
   switch (cond.operator) {
-    case '==':
-      return leftValue == rightValue;
-    case '!=':
-      return leftValue != rightValue;
-    case '===':
-      return leftValue === rightValue;
-    case '!==':
-      return leftValue !== rightValue;
-    case '>':
-      return leftValue > rightValue;
-    case '<':
-      return leftValue < rightValue;
-    case '>=':
-      return leftValue >= rightValue;
-    case '<=':
-      return leftValue <= rightValue;
+    case '==': return leftValue == rightValue;
+    case '!=': return leftValue != rightValue;
+    case '===': return leftValue === rightValue;
+    case '!==': return leftValue !== rightValue;
+    case '>': return leftValue > rightValue;
+    case '<': return leftValue < rightValue;
+    case '>=': return leftValue >= rightValue;
+    case '<=': return leftValue <= rightValue;
     default:
       throw new Error(`Unsupported operator: ${cond.operator}`);
   }
@@ -84,19 +100,41 @@ function evaluateExpression(expr: HExpressionNode<any>, context: any): unknown {
   throw new Error(`Function not found: ${fn}`);
 }
 
-function resolveValue(value: HValue, context: any): any {
-  if (typeof value === 'object' && value !== null) {
-    if ('var' in value) {
-      return getIn(context, value.var as string);
-    }
-    if ('value' in value) {
-      return value.value;
-    }
-    if ('expression' in value) {
-      return evaluateExpression(value.expression, context);
-    }
+function isHCondition(value: any): value is HCondition {
+  return typeof value === 'object' && 'operator' in value;
+}
+
+function isObject(value: any): value is Record<string, any> {
+  return typeof value === 'object' && value !== null;
+}
+
+function resolve(value: HConditionValue, context: any): any {
+  if (isHCondition(value)) {
+    return evaluateConditionPrimitive(value, context);
   }
 
+  return resolveValue(value, context);
+}
+
+function resolveValue(value: HValue, context: any): any {
+  if (!isObject(value)) {
+    // Jika primitif (string/number/boolean), langsung kembalikan
+    return value;
+  }
+
+  if ('var' in value) {
+    return getIn(context, value.var as string);
+  }
+
+  if ('value' in value) {
+    return value.value;
+  }
+
+  if ('expression' in value) {
+    return evaluateExpression(value.expression, context);
+  }
+
+  // fallback: kembalikan object mentah
   return value;
 }
 

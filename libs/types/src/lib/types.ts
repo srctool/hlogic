@@ -29,11 +29,38 @@ export interface HExpressionNode<T = unknown> {
 }
 
 // Struktur kondisi utama
-export interface HCondition {
+export interface HConditionBase {
   operator: string;
-  left: HValue;
-  right: HValue;
 }
+export type HConditionValue = HValue | HCondition;
+
+// Bentuk Biner (kompatibel lama & baru
+export interface HConditionBinary extends HConditionBase {
+  operator: string;
+  left: HConditionValue;
+  right?: HConditionValue;
+}
+
+// Bentuk Array (baru, untuk and/or)
+export interface HConditionArray extends HConditionBase {
+  operator: 'and' | 'or';
+  conditions: HCondition[];
+}
+
+// Bentuk Unary (untuk not)
+export interface HConditionUnary extends HConditionBase {
+  operator: 'not';
+  condition: HCondition;
+}
+
+// Union type
+export type HCondition = HConditionBinary | HConditionArray | HConditionUnary;
+
+// export interface HCondition {
+//   operator: string;
+//   left: HValue;
+//   right: HValue;
+// }
 
 // Jenis nilai (literal, referensi, nested expression)
 export type HValue =
