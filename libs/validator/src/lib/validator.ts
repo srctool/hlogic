@@ -4,8 +4,8 @@ export function validate(input: any): void {
   }
 
   // Validasi extension
-  if (input.extension !== 'hscript') {
-    throw new Error(`Invalid extension: ${input.extension}, expected 'hscript'`);
+  if (input.extension !== 'hlscript') {
+    throw new Error(`Invalid extension: ${input.extension}, expected 'hlscript'`);
   }
 
   // Validasi type

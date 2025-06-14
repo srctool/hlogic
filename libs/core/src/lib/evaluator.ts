@@ -6,7 +6,9 @@ import {
   HScriptNode,
   HValue,
 } from '@hlogic/types';
-import { getRegisteredFunction } from './function-registry.js';
+import { isObject, resolveValue } from './utils.js';
+import { evaluateExpression } from './evaluate-expression.js';
+import { evaluateCondition, evaluateConditionPrimitive } from './evaluate-condition.js';
 
 
 export function evaluate(script: HScriptNode): unknown {
@@ -16,188 +18,30 @@ export function evaluate(script: HScriptNode): unknown {
 
   const context = script.context;
 
-  if (script.type === 'condition' && script.condition) {
-    return evaluateCondition(script.condition, context);
-  }
+  // if (script.type === 'condition' && script.condition) {
+  //   return evaluateCondition(script.condition, context);
+  // }
 
-  if (script.type === 'expression' && script.expression) {
-    return evaluateExpression(script.expression, context);
+  // if (script.type === 'expression' && script.expression) {
+  //   return evaluateExpression(script.expression, context);
+  // }
+
+  switch (script.type) {
+    case 'condition':
+      return evaluateCondition(script.body as HConditionNode, context);
+
+    case 'expression':
+      return evaluateExpression(script.body as HExpressionNode<unknown>, context);
+
+    // case 'loop':
+    //   return evaluateLoop(script.body as HLoopNode, context);
+
+    // case 'query':
+    //   return evaluateQuery(script.body as HQueryNode, context);
+
+    default:
+      throw new Error(`Unsupported script type: ${script.type}`);
   }
 
   throw new Error(`Unsupported script type: ${script.type}`);
-}
-
-function evaluateCondition(condition: HConditionNode, context: any): unknown {
-  const { if: hCondition, then, else: elseAction, elseIf } = condition;
-
-  // Evaluate the current condition
-  const isTrue = evaluateConditionPrimitive(hCondition, context);
-
-  if (isTrue) {
-    return evaluateAction(then, context);
-  }
-
-  // Evaluate elseIf chain
-  if (elseIf) {
-    for (const elif of elseIf) {
-      const result = evaluateCondition(elif, context);
-      if (result !== undefined) {
-        return result;
-      }
-    }
-  }
-
-  // Evaluate else
-  if (elseAction !== undefined) {
-    return evaluateAction(elseAction, context);
-  }
-
-  return undefined;
-}
-
-function evaluateConditionPrimitive(cond: HCondition, context: any): boolean {
-  if ('conditions' in cond) {
-    const results = cond.conditions.map((c) =>
-      evaluateConditionPrimitive(c, context)
-    );
-    return cond.operator === 'and'
-      ? results.every(Boolean)
-      : results.some(Boolean);
-  }
-
-  if ('condition' in cond && cond.operator === 'not') {
-    const result = resolve(cond.condition, context);
-    return !result;
-  }
-
-  const leftValue = resolve(cond.left, context);
-  const rightValue = resolve(cond.right!, context);
-
-  switch (cond.operator) {
-    case '==':
-      return leftValue == rightValue;
-    case '!=':
-      return leftValue != rightValue;
-    case '===':
-      return leftValue === rightValue;
-    case '!==':
-      return leftValue !== rightValue;
-    case '>':
-      return leftValue > rightValue;
-    case '<':
-      return leftValue < rightValue;
-    case '>=':
-      return leftValue >= rightValue;
-    case '<=':
-      return leftValue <= rightValue;
-    default:
-      throw new Error(`Unsupported operator: ${cond.operator}`);
-  }
-}
-
-const allowGlobalFunctions = process.env.NODE_ENV !== 'production'; // contoh aktifkan
-
-function evaluateExpression(expr: HExpressionNode<unknown>, context: any): unknown {
-  const { fn, args = [] } = expr;
-
-  let func = getRegisteredFunction(fn);
-
-  if (!func && allowGlobalFunctions && typeof (globalThis as any)[fn] === 'function') {
-    func = (globalThis as any)[fn];
-  }
-
-  if (!func) {
-    throw new Error(`Function not found in registry: ${fn}`);
-  }
-
-  const resolvedArgs = args.map((arg) => resolveValue(arg, context));
-  return func(...resolvedArgs);
-}
-
-function isHCondition(value: any): value is HCondition {
-  return typeof value === 'object' && 'operator' in value;
-}
-
-function resolve(value: HConditionValue, context: any): any {
-  if (isHCondition(value)) {
-    return evaluateConditionPrimitive(value, context);
-  }
-
-  return resolveValue(value, context);
-}
-
-function resolveValue(value: unknown, context: any): any {
-  // Jika bukan object, langsung kembalikan (primitif)
-  if (!isObject(value)) {
-    return value;
-  }
-
-  // Cek apakah ini referensi variabel
-  if ('var' in value) {
-    const varPath = value.var;
-
-    // Validasi tipe path
-    if (typeof varPath !== 'string') {
-      throw new Error(
-        `Invalid variable reference: expected string, got ${typeof varPath}`
-      );
-    }
-
-    // Validasi context tersedia
-    if (!context) {
-      throw new Error(`Context is required to resolve variable: ${varPath}`);
-    }
-
-    // Akses dari context
-    const resolved = getIn(context, varPath);
-
-    if (resolved === undefined) {
-      console.warn(`Variable not found in context: ${varPath}`);
-    }
-
-    return resolved;
-  }
-
-  // Cek apakah ini literal
-  if ('value' in value) {
-    return value.value;
-  }
-
-  // Cek apakah ini ekspresi bersarang
-  if ('expression' in value) {
-    return evaluateExpression(value.expression, context);
-  }
-
-  // fallback: kembalikan object mentah
-  return value;
-}
-
-function getIn(obj: any, path: string): any {
-  return path.split('.').reduce((acc, part) => acc?.[part], obj);
-}
-
-function isObject(value: any): value is Record<string, any> {
-  return typeof value === 'object' && value !== null;
-}
-
-function isVarReference(value: HValue): value is { var: string } {
-  return isObject(value) && 'var' in value && typeof value.var === 'string';
-}
-
-function evaluateAction(action: any, context: any): any {
-  if (typeof action === 'object' && action !== null && 'type' in action) {
-    const wrapper = action as { type: string; [key: string]: any };
-
-    if (wrapper.type === 'expression') {
-      return evaluateExpression(wrapper.expression, context);
-    }
-
-    if (wrapper.type === 'logic') {
-      return evaluateCondition(wrapper.logic, context);
-    }
-
-    throw new Error(`Unknown action type: ${wrapper.type}`);
-  }
-
-  return action;
 }

@@ -9,9 +9,9 @@ describe('hLogic Parser - Unit Tests', () => {
 
     expect(parse(input)).toEqual<HScriptNode>(
       expect.objectContaining({
-        extension: 'hscript',
+        extension: 'hlscript',
         type: 'condition',
-        condition: {
+        body: {
           if: {
             operator: '==',
             left: { var: 'user.role' },

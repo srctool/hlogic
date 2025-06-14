@@ -1,15 +1,45 @@
 // Jenis DSL utama
-export interface HScriptNode {
-  extension: 'hscript';
+// export interface HScriptNode {
+//   extension: 'hlscript';
+//   id?: string;
+//   label?: string;
+//   type: 'condition' | 'expression';
+//   context?: unknown;
+//   version?: string;
+
+//   // wrapper
+//   condition?: HConditionNode;
+//   expression?: HExpressionNode<unknown>;
+// }
+
+export type HScriptType = 'condition' | 'expression' | 'loop' | 'query';
+
+export type ScriptBodyMap = {
+  condition: HConditionNode;
+  expression: HExpressionNode<unknown>;
+  // loop: HLoopNode;
+  // query: HQueryNode;
+};
+
+export type ScriptBody = ScriptBodyMap[keyof ScriptBodyMap];
+export interface HScriptNode<
+  TType extends keyof ScriptBodyMap = keyof ScriptBodyMap
+> {
+  extension: 'hlscript';
+  type: TType;
+  context?: unknown;
   id?: string;
   label?: string;
-  type: 'condition' | 'expression';
-  context?: unknown;
-  version?: string;
+  version?: string | number;
+  body?: ScriptBodyMap[TType];
+}
 
-  // wrapper
-  condition?: HConditionNode;
-  expression?: HExpressionNode<unknown>;
+export interface HLoopNode {
+  type: 'foreach';
+  collection: HValue;
+  as?: string; // alias untuk item
+  asIndex?: string; // alias untuk index
+  action: HAction; // bisa expression/logic/loop
 }
 
 // Struktur node logika `if`

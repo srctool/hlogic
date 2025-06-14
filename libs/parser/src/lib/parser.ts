@@ -9,12 +9,12 @@ export function parse(raw: unknown): HScriptNode {
 
   const input = raw as Record<string, any>;
 
-    if (input.extension !== 'hscript') {
+    if (input.extension !== 'hlscript') {
     throw new Error('Unsupported extension');
   }
 
   const result: HScriptNode = {
-    extension: 'hscript',
+    extension: 'hlscript',
     type: input.type,
     id: input.id,
     label: input.label,
@@ -24,9 +24,9 @@ export function parse(raw: unknown): HScriptNode {
 
   // Parse berdasarkan tipe
   if (input.type === 'condition' && input.condition) {
-    result.condition = parseCondition(input.condition);
+    result.body = parseCondition(input.condition);
   } else if (input.type === 'expression' && input.expression) {
-    result.expression = input.expression; // misalnya ekspresi langsung
+    result.body = input.expression; // misalnya ekspresi langsung
   } else {
     throw new Error(`Unknown or unsupported script type: ${input.type}`);
   }

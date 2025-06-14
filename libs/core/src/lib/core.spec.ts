@@ -1,6 +1,6 @@
 import { simpleBasicConditionalInput } from '@hlogic/sample-input';
 import { evaluate } from './evaluator.js';
-import { HScriptNode, HConditionNode } from '@hlogic/types';
+import { HScriptNode, HConditionNode, HExpressionNode } from '@hlogic/types';
 import { parse } from '@hlogic/parser';
 import { registerFunction, unregisterFunction } from './function-registry.js';
 
@@ -8,22 +8,22 @@ const createContext = (data: any): any => data;
 
 // --- Helper untuk membuat script condition ---
 const createConditionScript = (
-  condition: HConditionNode,
+  body: HConditionNode,
   context?: any
 ): HScriptNode => ({
-  extension: 'hscript',
+  extension: 'hlscript',
   type: 'condition',
-  condition,
+  body,
   context,
 });
 
 const createExpressionScript = (
-  expression: any,
+  body: HExpressionNode,
   context?: any
 ): HScriptNode => ({
-  extension: 'hscript',
+  extension: 'hlscript',
   type: 'expression',
-  expression,
+  body,
   context,
 });
 
@@ -186,9 +186,9 @@ describe('Evaluator - Unit Tests', () => {
   // --- Test Expression Eksternal ---
   it('should evaluate expression type with args', () => {
     const script: HScriptNode = {
-      extension: 'hscript',
+      extension: 'hlscript',
       type: 'expression',
-      expression: {
+      body: {
         fn: 'add',
         args: [{ var: 'a' }, { var: 'b' }],
       },
@@ -220,9 +220,9 @@ describe('Evaluator - Unit Tests', () => {
 
   it('should throw error for unknown function', () => {
     const script: HScriptNode = {
-      extension: 'hscript',
+      extension: 'hlscript',
       type: 'expression',
-      expression: {
+      body: {
         fn: 'unknownFunction',
         args: [],
       },
@@ -318,6 +318,16 @@ describe('Evaluator - Logical Operators', () => {
     const result = evaluate(script);
     expect(result).toBe('Not Guest');
   });
+
+  // context = {
+//   url : "asdadsadassd.com"
+// }
+
+  // run (schema, context); {}
+  // function
+  //  call-api (url)
+  //    save_output.(json|csv)
+  //
 
   it('should handle nested logic with "and", "or", and "not"', () => {
     const script = createConditionScript(

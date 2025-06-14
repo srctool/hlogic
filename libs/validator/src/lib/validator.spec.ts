@@ -131,7 +131,7 @@ describe('Validator - Unit Tests', () => {
 
   it('should validate expression type correctly', () => {
     const input = {
-      extension: 'hscript',
+      extension: 'hlscript',
       type: 'expression',
       expression: {
         fn: 'add',
@@ -144,7 +144,7 @@ describe('Validator - Unit Tests', () => {
 
   it('should throw error if expression.fn is not string', () => {
     const input = {
-      extension: 'hscript',
+      extension: 'hlscript',
       type: 'expression',
       expression: {
         fn: 123,
@@ -157,7 +157,7 @@ describe('Validator - Unit Tests', () => {
 
   it('should throw error if expression.args is not array', () => {
     const input = {
-      extension: 'hscript',
+      extension: 'hlscript',
       type: 'expression',
       expression: {
         fn: 'add',

@@ -1,5 +1,5 @@
 export const simpleBasicConditionalInput = {
-  extension: 'hscript',
+  extension: 'hlscript',
   type: 'condition',
   context: {
     user: {
